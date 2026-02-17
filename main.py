@@ -36,8 +36,8 @@ app.add_middleware(
 )
 
 # Incluindo rotas
-app.include_router(imei_router.router)
-app.include_router(cluster_routes.router)
+app.include_router(imei_router.router, prefix="/api")
+app.include_router(cluster_routes.router, prefix="/api")
 
 if __name__ == "__main__":
     import uvicorn
