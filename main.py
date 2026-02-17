@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 from app.routes import imei as imei_router
 from app.routes import cluster_routes
+from app.routes.routes import app_router as routes_router
 from app.database import get_db, engine
 import app.models.dispositivos as models
 from app.models.cluster import Base as ClusterBase
@@ -36,6 +37,7 @@ app.add_middleware(
 )
 
 # Incluindo rotas
+app.include_router(routes_router, prefix="/api")
 app.include_router(imei_router.router, prefix="/api")
 app.include_router(cluster_routes.router, prefix="/api")
 
