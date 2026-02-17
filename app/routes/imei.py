@@ -18,7 +18,7 @@ from app.models.cluster import ClusterCreate, ClusterResponse
 import zipfile
 
 router = APIRouter(
-    prefix="",
+    prefix="/api",
     tags=["IMEI"],
     responses={404: {"description": "Não encontrado"}},
 )
