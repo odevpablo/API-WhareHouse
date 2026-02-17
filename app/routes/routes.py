@@ -5,7 +5,7 @@ from datetime import datetime
 from app.models.produto import Produto, ProdutoCreate
 from app.config.database import produtos_db, ProdutoQuery
 
-app_router = APIRouter(prefix="/api")
+app_router = APIRouter()
 
 def get_next_id() -> int:
     """Gera o próximo ID disponível"""
