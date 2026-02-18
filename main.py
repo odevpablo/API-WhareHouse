@@ -35,9 +35,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Inclui os roteadores
-app.include_router(imei_router.router)
-app.include_router(cluster_routes.router)
+# Inclui os roteadores com o prefixo /api
+app.include_router(imei_router.router, prefix="/api", tags=["IMEI"])
+app.include_router(cluster_routes.router, prefix="/api", tags=["Clusters"])
 
 if __name__ == "__main__":
     import uvicorn
