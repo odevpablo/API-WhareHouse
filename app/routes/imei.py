@@ -2,6 +2,9 @@ import io
 import json
 import qrcode
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Query, UploadFile, File
+
+# Create router instance
+router = APIRouter()
 from fastapi.responses import StreamingResponse, JSONResponse
 from app.services.cluster_service import ClusterService
 from typing import List, Dict, Any, Optional
@@ -29,8 +32,8 @@ SENHA_IMEI = "214741"
 # Inicializa os serviços
 imei_service = ConsultaImeiService(USUARIO_IMEI, SENHA_IMEI)
 
-@router.get("/", response_model=Dict[str, Any])
-def root():
+@router.get("/", response_model=dict)
+async def root():
     """
     Rota raiz da API
     
@@ -107,8 +110,8 @@ def root():
         }
     }
 
-@router.post("/consultar", response_model=Dict[str, Any])
-def consultar_imei(consulta: DispositivoConsulta):
+@router.post("/consultar-imei/", response_model=List[Dict[str, Any]])
+async def consultar_imei(consulta: DispositivoConsulta):
     """
     Consulta um ou mais IMEIs no sistema de inventário
     
@@ -205,8 +208,8 @@ def generate_qr_code(data: Dict, size: int = 10) -> bytes:
         return error_byte_arr.getvalue()
     return img_byte_arr.getvalue()
 
-@router.get("/qrcode/{imei}", response_class=Response)
-def get_qrcode_imei(imei: str):
+@router.get("/qrcode/{imei}")
+async def get_qrcode_imei(imei: str):
     """
     Gera um QR Code com os dados do IMEI consultado
     
@@ -245,7 +248,7 @@ import logging
 # Configura o logger para o módulo de rotas
 logger = logging.getLogger(__name__)
 
-@router.post("/api/processar-csv", response_model=ProcessarCSVResponse)
+@router.post("/processar-csv/", response_model=ProcessarCSVResponse)
 async def processar_csv(
     file: UploadFile = File(...),
     criar_cluster_automatico: bool = Query(True, description="Criar cluster automaticamente com os IMEIs encontrados"),
@@ -424,8 +427,8 @@ async def processar_csv(
         logger.info("Processamento do arquivo finalizado")
 
 # Rotas de Cluster
-@router.post("/clusters", response_model=ClusterResponse, status_code=status.HTTP_201_CREATED)
-def criar_cluster(cluster_data: ClusterCreate, db: Session = Depends(get_db)):
+@router.post("/clusters/", response_model=Dict[str, Any])
+async def criar_cluster(cluster_data: ClusterCreate, db: Session = Depends(get_db)):
     """
     Cria um novo cluster de IMEIs
     
@@ -446,8 +449,8 @@ def criar_cluster(cluster_data: ClusterCreate, db: Session = Depends(get_db)):
             detail=f"Erro ao criar cluster: {str(e)}"
         )
 
-@router.get("/clusters", response_model=List[Dict])
-def listar_clusters(db: Session = Depends(get_db)):
+@router.get("/clusters/", response_model=List[Dict[str, Any]])
+async def listar_clusters(db: Session = Depends(get_db)):
     """Lista todos os clusters criados"""
     try:
         return ClusterService(db).list_clusters()
@@ -457,8 +460,8 @@ def listar_clusters(db: Session = Depends(get_db)):
             detail=f"Erro ao listar clusters: {str(e)}"
         )
 
-@router.get("/clusters/{cluster_id}", response_model=Dict)
-def obter_cluster(
+@router.get("/clusters/{cluster_id}", response_model=Dict[str, Any])
+async def obter_cluster(
     cluster_id: str, 
     incluir_dados: bool = Query(False, description="Incluir dados completos dos IMEIs"),
     db: Session = Depends(get_db)
@@ -490,8 +493,8 @@ def obter_cluster(
             detail=f"Erro ao obter cluster: {str(e)}"
         )
 
-@router.get("/clusters/{cluster_id}/qrcode", response_class=Response)
-def get_qrcode_cluster(cluster_id: str, db: Session = Depends(get_db)):
+@router.get("/clusters/{cluster_id}/qrcode")
+async def get_qrcode_cluster(cluster_id: str, db: Session = Depends(get_db)):
     """
     Gera um QR Code com os dados do cluster, incluindo informações detalhadas dos IMEIs.
     Os dados são buscados diretamente da tabela específica do cluster.
