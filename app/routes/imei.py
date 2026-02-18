@@ -245,7 +245,7 @@ import logging
 # Configura o logger para o módulo de rotas
 logger = logging.getLogger(__name__)
 
-@router.post("/processar-csv", response_model=ProcessarCSVResponse)
+@router.post("/api/processar-csv", response_model=ProcessarCSVResponse)
 async def processar_csv(
     file: UploadFile = File(...),
     criar_cluster_automatico: bool = Query(True, description="Criar cluster automaticamente com os IMEIs encontrados"),
