@@ -29,7 +29,10 @@ app = FastAPI(
     title="Sistema de Gerenciamento de Clusters de IMEI",
     description="API para gerenciamento de clusters de dispositivos por IMEI",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    openapi_version="3.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
 # Configuração do CORS
