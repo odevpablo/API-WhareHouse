@@ -2,10 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
+import logging
 from app.database import get_db
 from app.services.tarefa_service import TarefaService
 from app.models.tarefa import TarefaCreate, TarefaUpdate, TarefaResponse, TarefaStatusUpdate, TarefaDelete
 from pydantic import BaseModel
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     tags=["Kanban"],
@@ -25,9 +29,18 @@ async def get_tarefas(db: Session = Depends(get_db)):
     """
     Retorna todas as tarefas do Kanban
     """
-    service = TarefaService(db)
-    tarefas = service.get_all_tarefas()
-    return tarefas
+    logger.info("Recebida requisição para listar todas as tarefas")
+    try:
+        service = TarefaService(db)
+        tarefas = service.get_all_tarefas()
+        logger.info(f"Retornando {len(tarefas)} tarefas")
+        return tarefas
+    except Exception as e:
+        logger.error(f"Erro ao buscar tarefas: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao buscar tarefas: {str(e)}"
+        )
 
 @router.get("/tarefas/status/{status}", response_model=List[TarefaResponse])
 async def get_tarefas_by_status(status: str, db: Session = Depends(get_db)):
