@@ -30,9 +30,23 @@ app = FastAPI(
     description="API para gerenciamento de clusters de dispositivos por IMEI",
     version="1.0.0",
     lifespan=lifespan,
-    openapi_version="3.0.0",
+    openapi_version="3.0.2",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    openapi_tags=[
+        {
+            "name": "Kanban",
+            "description": "Operações do Kanban de tarefas"
+        },
+        {
+            "name": "IMEI",
+            "description": "Consulta e gerenciamento de IMEIs"
+        },
+        {
+            "name": "Clusters",
+            "description": "Gerenciamento de clusters de dispositivos"
+        }
+    ]
 )
 
 # Configuração do CORS
