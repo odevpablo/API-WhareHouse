@@ -6,9 +6,11 @@ from dotenv import load_dotenv
 
 from app.routes import imei as imei_router
 from app.routes import cluster_routes
+from app.routes import kanban as kanban_router
 from app.database import get_db, engine
 import app.models.dispositivos as models
 from app.models.cluster import Base as ClusterBase
+from app.models.tarefa import Base as TarefaBase
 
 # Carrega as variáveis de ambiente
 load_dotenv()
@@ -25,6 +27,7 @@ async def startup_event():
     # Cria as tabelas no banco de dados
     models.Base.metadata.create_all(bind=engine)
     ClusterBase.metadata.create_all(bind=engine)
+    TarefaBase.metadata.create_all(bind=engine)
 
 # Configuração do CORS
 app.add_middleware(
@@ -38,6 +41,7 @@ app.add_middleware(
 # Inclui os roteadores com o prefixo /api
 app.include_router(imei_router.router, prefix="/api", tags=["IMEI"])
 app.include_router(cluster_routes.router, prefix="/api", tags=["Clusters"])
+app.include_router(kanban_router.router, prefix="/api", tags=["Kanban"])
 
 if __name__ == "__main__":
     import uvicorn
