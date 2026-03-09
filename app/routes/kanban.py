@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 import logging
+import csv
+import io
 from app.database import get_db
 from app.services.tarefa_service import TarefaService
 from app.models.tarefa import TarefaCreate, TarefaUpdate, TarefaResponse, TarefaStatusUpdate, TarefaObservacaoUpdate, TarefaDelete
@@ -229,3 +231,108 @@ async def get_kanban_summary(db: Session = Depends(get_db)):
     }
     
     return summary
+
+@router.post("/tarefas/upload", response_model=List[TarefaResponse])
+async def upload_tarefas_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """
+    Faz upload de um arquivo CSV e cria tarefas em massa
+    
+    Formato esperado do CSV:
+    title,imei,unidade,prazo,perfil,priority,observacao,numero_chamado,status
+    
+    Campos obrigatórios: title, imei, unidade, prazo, perfil
+    """
+    logger.info(f"Recebido upload do arquivo: {file.filename}")
+    
+    # Verificar se é um arquivo CSV
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas arquivos CSV são permitidos"
+        )
+    
+    try:
+        # Ler conteúdo do arquivo
+        contents = await file.read()
+        csv_content = contents.decode('utf-8')
+        
+        # Processar CSV
+        csv_reader = csv.DictReader(io.StringIO(csv_content))
+        tarefas_data = []
+        
+        # Mapeamento de colunas (case insensitive)
+        field_mapping = {
+            'title': ['title', 'titulo', 'título'],
+            'imei': ['imei', 'serial'],
+            'unidade': ['unidade', 'unit', 'loja'],
+            'prazo': ['prazo', 'deadline', 'data_prazo'],
+            'perfil': ['perfil', 'profile', 'responsavel'],
+            'priority': ['priority', 'prioridade'],
+            'observacao': ['observacao', 'observação', 'obs', 'notes'],
+            'numero_chamado': ['numero_chamado', 'chamado', 'ticket'],
+            'status': ['status', 'situacao']
+        }
+        
+        for row_num, row in enumerate(csv_reader, start=2):  # começa em 2 por causa do header
+            try:
+                # Normalizar nomes das colunas
+                normalized_row = {}
+                for key, value in row.items():
+                    if key.strip().lower():
+                        # Encontrar o campo correspondente
+                        for field, possible_names in field_mapping.items():
+                            if key.strip().lower() in [name.lower() for name in possible_names]:
+                                normalized_row[field] = value.strip()
+                                break
+                
+                # Validar campos obrigatórios
+                required_fields = ['title', 'imei', 'unidade', 'prazo', 'perfil']
+                missing_fields = [field for field in required_fields if not normalized_row.get(field)]
+                
+                if missing_fields:
+                    logger.warning(f"Linha {row_num}: Campos obrigatórios faltando: {missing_fields}")
+                    continue
+                
+                # Criar TarefaCreate
+                tarefa_create = TarefaCreate(
+                    title=normalized_row['title'],
+                    imei=normalized_row['imei'],
+                    unidade=normalized_row['unidade'],
+                    prazo=normalized_row['prazo'],
+                    perfil=normalized_row['perfil'],
+                    priority=normalized_row.get('priority', 'media'),
+                    observacao=normalized_row.get('observacao'),
+                    numero_chamado=normalized_row.get('numero_chamado'),
+                    status=normalized_row.get('status', 'demanda')
+                )
+                
+                tarefas_data.append(tarefa_create)
+                
+            except Exception as e:
+                logger.error(f"Erro ao processar linha {row_num}: {str(e)}")
+                continue
+        
+        if not tarefas_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nenhuma tarefa válida encontrada no CSV"
+            )
+        
+        # Criar tarefas em massa
+        service = TarefaService(db)
+        tarefas_criadas = service.create_tarefas_bulk(tarefas_data)
+        
+        logger.info(f"Criadas {len(tarefas_criadas)} tarefas com sucesso")
+        return tarefas_criadas
+        
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Erro ao decodificar arquivo. Use codificação UTF-8."
+        )
+    except Exception as e:
+        logger.error(f"Erro ao processar upload: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao processar arquivo: {str(e)}"
+        )

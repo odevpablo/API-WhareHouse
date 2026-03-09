@@ -95,3 +95,25 @@ class TarefaService:
         self.db.commit()
         self.db.refresh(tarefa)
         return TarefaResponse.from_orm(tarefa)
+
+    def create_tarefas_bulk(self, tarefas_data: List[TarefaCreate]) -> List[TarefaResponse]:
+        """Cria múltiplas tarefas em massa"""
+        tarefas_criadas = []
+        
+        try:
+            for tarefa_data in tarefas_data:
+                tarefa = TarefaDB(**tarefa_data.dict())
+                self.db.add(tarefa)
+                tarefas_criadas.append(tarefa)
+            
+            self.db.commit()
+            
+            # Refresh todas as tarefas para obter os IDs
+            for tarefa in tarefas_criadas:
+                self.db.refresh(tarefa)
+            
+            return [TarefaResponse.from_orm(tarefa) for tarefa in tarefas_criadas]
+            
+        except Exception as e:
+            self.db.rollback()
+            raise e
