@@ -5,7 +5,7 @@ from datetime import datetime
 import logging
 from app.database import get_db
 from app.services.tarefa_service import TarefaService
-from app.models.tarefa import TarefaCreate, TarefaUpdate, TarefaResponse, TarefaStatusUpdate, TarefaDelete
+from app.models.tarefa import TarefaCreate, TarefaUpdate, TarefaResponse, TarefaStatusUpdate, TarefaObservacaoUpdate, TarefaDelete
 from pydantic import BaseModel
 
 # Configurar logger
@@ -177,6 +177,22 @@ async def update_tarefa_observacao(tarefa_id: int, obs_data: TarefaObservacaoUpd
     
     db.commit()
     db.refresh(tarefa)
+    
+    return tarefa
+
+@router.put("/tarefas/{tarefa_id}/observacao", response_model=TarefaResponse)
+async def update_observacao(tarefa_id: int, observacao_data: TarefaObservacaoUpdate, db: Session = Depends(get_db)):
+    """
+    Atualiza apenas a observação de uma tarefa
+    """
+    service = TarefaService(db)
+    tarefa = service.update_observacao(tarefa_id, observacao_data)
+    
+    if not tarefa:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tarefa com ID {tarefa_id} não encontrada"
+        )
     
     return tarefa
 

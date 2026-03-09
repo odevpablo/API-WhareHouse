@@ -78,5 +78,8 @@ class TarefaStatusUpdate(BaseModel):
     status: str
     observacao: Optional[str] = None
 
+class TarefaObservacaoUpdate(BaseModel):
+    observacao: str
+
 class TarefaDelete(BaseModel):
     id: int

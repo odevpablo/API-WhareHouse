@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List, Optional
-from app.models.tarefa import TarefaDB, TarefaCreate, TarefaUpdate, TarefaStatusUpdate, TarefaResponse
+from app.models.tarefa import TarefaDB, TarefaCreate, TarefaUpdate, TarefaStatusUpdate, TarefaObservacaoUpdate, TarefaResponse
 from datetime import datetime
 
 class TarefaService:
@@ -82,3 +82,16 @@ class TarefaService:
         """Retorna tarefas por perfil"""
         tarefas_db = self.db.query(TarefaDB).filter(TarefaDB.perfil == perfil).order_by(desc(TarefaDB.data_criacao)).all()
         return [TarefaResponse.from_orm(tarefa) for tarefa in tarefas_db]
+
+    def update_observacao(self, tarefa_id: int, observacao_data: TarefaObservacaoUpdate) -> Optional[TarefaResponse]:
+        """Atualiza apenas a observação de uma tarefa"""
+        tarefa = self.db.query(TarefaDB).filter(TarefaDB.id == tarefa_id).first()
+        if not tarefa:
+            return None
+        
+        tarefa.observacao = observacao_data.observacao
+        tarefa.data_atualizacao = datetime.utcnow()
+        
+        self.db.commit()
+        self.db.refresh(tarefa)
+        return TarefaResponse.from_orm(tarefa)
