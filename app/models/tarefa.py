@@ -55,7 +55,7 @@ class TarefaInDB(TarefaBase):
     data_atualizacao: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class TarefaResponse(BaseModel):
     id: int
@@ -72,7 +72,7 @@ class TarefaResponse(BaseModel):
     data_atualizacao: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class TarefaStatusUpdate(BaseModel):
     status: str
