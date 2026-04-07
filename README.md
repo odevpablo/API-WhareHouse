@@ -1,4 +1,4 @@
-# Sistema de Gerenciamento de Clusters de IMEI
+# Sistema de Gerenciamento
  
 API FastAPI para gerenciamento de clusters de dispositivos por IMEI e sistema Kanban de tarefas.
  
